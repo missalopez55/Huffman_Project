@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QGraphicsView, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsTextItem, QScrollArea
 )
 from PyQt6.QtCore import Qt, QPointF
+from PyQt6.QtGui import QPalette, QColor, QBrush, QPen, QFont
 
 
 # Represents a single node in the Huffman Tree
@@ -321,33 +322,67 @@ class HuffmanTreeWindow(QWidget):
         layout.addWidget(self.view)
         self.setLayout(layout)
 
+        # Detect system theme and set colors
+        self.set_colors_based_on_theme()
+
+        # Draw the Huffman Tree
         self.draw_tree(root, QPointF(400, 50), 200)
 
-    # Recursively draws the Huffman Tree
+    def set_colors_based_on_theme(self):
+        """
+        Set colors for the tree based on the system theme (dark or light mode).
+        """
+        palette = QApplication.palette()
+        background_color = palette.color(QPalette.ColorRole.Window)
+        text_color = palette.color(QPalette.ColorRole.WindowText)
+
+        # Determine if the theme is dark or light
+        is_dark_mode = background_color.lightness() < 128
+
+        # Set colors accordingly
+        if is_dark_mode:
+            self.node_color = QColor(173, 216, 230)  # Light blue for nodes
+            self.edge_color = QColor(200, 200, 200)  # Light gray for edges
+            self.text_color = QColor(255, 255, 255)  # White for text
+            self.node_border_color = QColor(100, 100, 100)  # Dark gray for node borders
+        else:
+            self.node_color = QColor(0, 0, 139)  # Dark blue for nodes
+            self.edge_color = QColor(100, 100, 100)  # Dark gray for edges
+            self.text_color = QColor(0, 0, 0)  # Black for text
+            self.node_border_color = QColor(200, 200, 200)  # Light gray for node borders
+
+        # Set the background color of the scene
+        self.scene.setBackgroundBrush(QBrush(background_color))
+
     def draw_tree(self, node, pos, x_offset):
         if node is None:
             return
 
-        circle_radius = 20
+        circle_radius = 25  # Increased node size
         ellipse = QGraphicsEllipseItem(pos.x() - circle_radius, pos.y() - circle_radius, 2 * circle_radius, 2 * circle_radius)
-        ellipse.setBrush(Qt.GlobalColor.lightGray)
+        ellipse.setBrush(QBrush(self.node_color))  # Use dynamic node color
+        ellipse.setPen(QPen(self.node_border_color, 2))  # Add border to nodes
         self.scene.addItem(ellipse)
 
         label = repr(node.char) if node.char else '␀'  # Show character or null for merged nodes
         text = QGraphicsTextItem(f"{label}\n{node.freq}")
+        text.setDefaultTextColor((self.text_color))  # Use dynamic text color
+        text.setFont(QFont("Monospace", 10))  # Use a monospaced font
         text.setPos(pos.x() - 15, pos.y() - 15)
         self.scene.addItem(text)
 
         # Draw left child
         if node.left:
-            left_pos = QPointF(pos.x() - x_offset, pos.y() + 80)
-            self.scene.addLine(pos.x(), pos.y() + circle_radius, left_pos.x(), left_pos.y() - circle_radius)
+            left_pos = QPointF(pos.x() - x_offset, pos.y() + 100)  # Increased vertical spacing
+            line = self.scene.addLine(pos.x(), pos.y() + circle_radius, left_pos.x(), left_pos.y() - circle_radius)
+            line.setPen(QPen(self.edge_color, 2))  # Use dynamic edge color
             self.draw_tree(node.left, left_pos, x_offset / 1.5)
 
         # Draw right child
         if node.right:
-            right_pos = QPointF(pos.x() + x_offset, pos.y() + 80)
-            self.scene.addLine(pos.x(), pos.y() + circle_radius, right_pos.x(), right_pos.y() - circle_radius)
+            right_pos = QPointF(pos.x() + x_offset, pos.y() + 100)  # Increased vertical spacing
+            line = self.scene.addLine(pos.x(), pos.y() + circle_radius, right_pos.x(), right_pos.y() - circle_radius)
+            line.setPen(QPen(self.edge_color, 2))  # Use dynamic edge color
             self.draw_tree(node.right, right_pos, x_offset / 1.5)
 
 
